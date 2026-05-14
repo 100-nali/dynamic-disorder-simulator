@@ -1,0 +1,87 @@
+name: realistic_device_graph
+
+device_config:
+  gate_config:
+    gate_design_dir: "data/gate_designs"
+    gate_design_file: "IST_10721_S14.png"
+  material_config:
+    carrier_charge: 1
+    degeneracy: 4
+    exp_charge_fudge_factor: 3
+    donors: 0
+    effective_mass: 0.28
+    mean_disorder: 0.0
+    relative_permittivity: 14.85
+    surface_potential: -310.0
+    scale_factor: 1
+  carrier_depth: 40.0
+  donor_density: 6.2e+16
+  donor_height: 20.0
+  drain:
+  - 0.05
+  - 0.95
+  material: SiGe
+  source:
+  - 0.05
+  - 0.05
+  width: 880
+
+node_configs:
+- node_class: InitialElectroStaticPotential
+  name: initial_electrostatic_potential
+  connections:
+    input_data_names:
+    - gate_voltages
+    output_data_names:
+    - electrostatic_potential
+
+- node_class: IterativeSelfConsistentPotentialNode
+  name: iterative_self_consistent_potential
+  connections:
+    input_data_names:
+    - electrostatic_potential
+    output_data_names:
+    - self_consistent_potential_iterative
+
+- node_class: LoGQuantumDotDetectionNode
+  name: LoG_dot_counter
+  connections:
+    input_data_names:
+      - self_consistent_potential_iterative
+    output_data_names:
+      - dots
+
+- node_class: DotOccupationCapacitanceNode
+  name: capacitive_dot_occupation_node
+  connections:
+    input_data_names:
+      - self_consistent_potential_iterative
+      - dots
+    output_data_names:
+      - dots_with_occupation
+      - energy_matrix
+
+- node_class: SemiClassicalTransportNode
+  name: semiclassical_transport
+  connections:
+    input_data_names:
+      - self_consistent_potential_iterative
+    output_data_names:
+      - trajectory
+      - current
+
+- node_class: DoubleDotTunnelCouplingNode
+  connections:
+    input_data_names:
+      - self_consistent_potential_iterative
+      - dots
+    output_data_names:
+      - tunnel_coupling
+
+- node_class: CarrierDensityNode
+  name: carrier_density_iterative_node
+  connections:
+    input_data_names:
+      - self_consistent_potential_iterative
+    output_data_names:
+      - carrier_density_iterative

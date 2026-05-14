@@ -1,0 +1,44 @@
+[project]
+name = "simulator"
+version = "0.1.0"
+description = "Charge-stability-diagram simulator: external disorder -> batched CSD. Extracted from qxcl for use as a data source for the dynamic-disorder-potential project."
+authors = [
+    {name = "Sonali Goel"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy (>=2.0,<3.0)",
+    "scipy (>=1.13,<2.0)",
+    "scikit-image (>=0.24,<1.0)",
+    "matplotlib (>=3.9,<4.0)",
+    "h5py (>=3.11,<4.0)",
+    "pyyaml (>=6.0,<7.0)",
+    "pydantic (>=2.6,<3.0)",
+    "torch (>=2.5,<3.0)",
+    "networkx (>=3.3,<4.0)",
+    "click (>=8.1,<9.0)",
+    "kwant (>=1.5,<2.0)",
+    "tinyarray (>=1.2,<2.0)",
+]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+packages = [{include = "simulator", from = "src"}]
+include = ["configs/*.yaml", "data/gate_designs/*"]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^9.0"
+pyright = "^1.1"
+ruff = "^0.14"
+poethepoet = "^0.38"
+
+[tool.poe.tasks]
+test = "pytest"
+lint = "ruff check ."
+format = "ruff format ."
+typecheck = "pyright"

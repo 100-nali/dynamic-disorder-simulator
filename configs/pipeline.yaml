@@ -1,0 +1,41 @@
+# Pipeline config for generating (disorder, CSD) training pairs.
+#
+# Every sample = one dense disorder field -> one CSD image (no time trajectory,
+# no hyperprior, no TLF sampler). Plug a `DisorderSource` in via the runner.
+
+# Number of (disorder, CSD) samples to generate.
+n_samples: 1
+
+# Where trajectories are written. Each sample becomes `sample_{NNNNNN}.h5`.
+output_dir: data/runs/default
+
+# Master RNG seed; per-sample seed is derived as (seed, sample_id).
+seed: 0
+
+# Graph YAML describing device + node pipeline.
+graph_config_path: configs/graph.yaml
+
+# 1 = serial (debug), >1 = multiprocessing pool over samples.
+n_workers: 1
+
+# Inducing points: where to sample the dense disorder field for the DT input/target vector.
+inducing_points:
+  # 'grid' lays an n x n regular grid over the device. 'list' takes explicit coords.
+  layout: grid
+  n_per_side: 8
+  # If layout=list, override with:
+  # coords: [[x0, y0], [x1, y1], ...]    # pixel coords into the (nx, ny) field
+
+# CSD sweep config.
+sweep:
+  plunger_indices: [9, 6]
+  plunger_range: [1000, 2600]
+  n_points: 128
+  base_voltage_mV: 1400.0
+
+  # GPU/torch batched path. Set false to fall back to the serial sweep.
+  batched: true
+  # Chunk batch dimension to bound FFT memory (None = full batch in one call).
+  sc_chunk_size: 100
+  # Parallel workers for the per-frame transport call.
+  transport_workers: 16

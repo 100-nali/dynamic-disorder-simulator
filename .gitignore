@@ -1,0 +1,28 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyright/
+*.egg-info/
+build/
+dist/
+.DS_Store
+*.Zone.Identifier
+*:Zone.Identifier
+
+# generated data (each run writes here)
+data/runs/
+data/cache/
+*.h5
+*.tmp
+manifest.jsonl
+
+# notebooks/checkpoints
+.ipynb_checkpoints/
