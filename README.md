@@ -57,6 +57,20 @@ pip install -e src/dynamic_disorder_potential/simulator
 
 After install, `from simulator.pipeline.dataset import SimulatorDataset` works from any module in the DT repo.
 
+### Torch / CUDA matching
+
+The `torch (>=2.5,<2.9)` pin in `pyproject.toml` keeps you on a release whose default PyPI wheels are built against **CUDA 12.8** — compatible with CUDA 12.x drivers (`nvidia-smi` shows `CUDA Version: 12.x`). Torch ≥ 2.9 ships wheels built against CUDA 13, which silently falls back to CPU on 12.x drivers and tanks the SC iteration runtime ~15×.
+
+If your driver supports CUDA 13.x or you want a specific torch build, install torch explicitly from the matching wheel index **before** `pip install -e .`:
+
+```bash
+# CUDA 12.x drivers (most current Linux setups, including oums-dlgpu1):
+pip install 'torch>=2.5,<2.9' --index-url https://download.pytorch.org/whl/cu128
+
+# Verify:
+python -c "import torch; print(torch.cuda.is_available())"   # must be True
+```
+
 ## Day-to-day (working from the DT repo)
 
 **Pull latest simulator changes:**

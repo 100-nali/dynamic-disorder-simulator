@@ -16,7 +16,11 @@ dependencies = [
     "h5py (>=3.11,<4.0)",
     "pyyaml (>=6.0,<7.0)",
     "pydantic (>=2.6,<3.0)",
-    "torch (>=2.5,<3.0)",
+    # Cap below 2.9: from 2.9 onward, default PyPI wheels are built against
+    # CUDA 13.x, which is incompatible with CUDA 12.x drivers (driver
+    # mismatch -> torch silently falls back to CPU). See README install
+    # section for the matching --index-url if you need a specific build.
+    "torch (>=2.5,<2.9)",
     "networkx (>=3.3,<4.0)",
     "click (>=8.1,<9.0)",
     "kwant (>=1.5,<2.0)",
