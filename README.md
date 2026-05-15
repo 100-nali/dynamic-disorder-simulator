@@ -139,6 +139,42 @@ for epoch in range(n_epochs):
 
 For a quick run-everything driver, `simulator.pipeline.runner.run(cfg, source_factory)` generates all `cfg.n_samples` up front (serial or via `mp.Pool` when `cfg.n_workers > 1`).
 
+### Using the TLF (Ge/SiGe charge-trap) source
+
+`TLFDisorderSource` is the qxcl Ge/SiGe charge-trap prior wired as a `DisorderSource`. Two modes:
+
+```python
+import yaml
+from simulator.disorder_prior.hyperprior import load_hyperprior
+from simulator.disorder_prior.trap_sampler import TrapSamplerConfig
+from simulator.pipeline.disorder_sources.tlf import TLFDisorderSource
+
+# Mode 1: fixed config — every draw uses the same trap-count mean / density.
+fixed_src = TLFDisorderSource(
+    grid_shape=(346, 346),
+    physical_width_nm=880.0,
+    sampler_config=TrapSamplerConfig(
+        grid_shape=(346, 346), physical_width_nm=880.0,
+        n_traps_mean=10.0, total_trap_density=10.0,
+        donor_fraction=0.5, mean_occupancy=0.5,
+        fraction_dipole=0.3,
+    ),
+)
+
+# Mode 2: hyperprior — every draw re-samples TrapSamplerConfig first,
+# giving epistemic diversity across the training set.
+hp = load_hyperprior(yaml.safe_load(open("configs/hyperprior.yaml")))
+hyper_src = TLFDisorderSource(
+    grid_shape=(346, 346), physical_width_nm=880.0, hyperprior=hp,
+)
+```
+
+Both implement the same `DisorderSource` interface, so they drop into `SimulatorDataset(cfg, source_factory=lambda: ...)` or `simulator.pipeline.runner.run(cfg, source_factory=lambda: ...)` exactly like any other source.
+
+The hyperprior YAML schema and default values are in [`configs/hyperprior.yaml`](configs/hyperprior.yaml). What you provide: distributions for `n_traps_mean`, `donor_fraction`, `mean_occupancy`. What's optional / sensible-defaulted: trap depths, dipole length, gate-bias strength, fraction_dipole.
+
+The trajectory loop (`sample_trajectory`) from qxcl is intentionally **not** restored — the simulator treats each `(disorder, CSD)` pair independently.
+
 ## Testing it works
 
 End-to-end smoke — builds the real graph, generates one CSD with a dummy Gaussian disorder source, reads back the HDF5, and confirms a cache hit on the second call. ~10s for an 8×8 sweep, ~1–2 min for the full 128×128.

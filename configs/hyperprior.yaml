@@ -1,0 +1,42 @@
+# Example hyperprior over TrapSamplerConfig parameters for TLFDisorderSource.
+#
+# Each draw samples one (n_traps_mean, donor_fraction, mean_occupancy, ...)
+# tuple, which parameterises one ChargeTrapSampler for one disorder draw.
+#
+# Distribution widths should plausibly bracket where the real device sits:
+# too narrow and the transformer fails on out-of-distribution real data;
+# too wide and you waste capacity on physically implausible regimes.
+#
+# Loaded via:
+#   import yaml
+#   from simulator.disorder_prior.hyperprior import load_hyperprior
+#   hp = load_hyperprior(yaml.safe_load(open("configs/hyperprior.yaml")))
+
+# Mean number of traps per device. Trap density depends on Si/Ge interface
+# quality; literature spans roughly 5 - 30 active traps over ~1 micron^2.
+# LogNormal centred around exp(2.3) ~= 10, sigma=0.5 -> ~3x range.
+n_traps_mean:
+  type:  lognormal
+  mu:    2.3       # log(10)
+  sigma: 0.5
+
+# Fraction of traps that are donor-type (+1e when ionised) vs acceptor-type
+# (-1e when occupied). Each trap is quantised — no fractional charges.
+# Beta(2, 2) gives uniform-ish around 0.5: device might be donor-dominated,
+# acceptor-dominated, or balanced; we don't know a priori.
+donor_fraction:
+  type:  beta
+  alpha: 2
+  beta:  2
+  scale: 1.0
+
+# Equilibrium occupancy fraction. Set by trap energy levels vs Fermi level.
+# Uniform over a wide bracket since poorly constrained.
+mean_occupancy:
+  type: uniform
+  low:  0.3
+  high: 0.7
+
+# Hard bounds on the trap count — clip pathological Poisson-tail draws.
+n_traps_min: 1
+n_traps_max: 50
