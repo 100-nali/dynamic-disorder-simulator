@@ -1,0 +1,116 @@
+# Alternative device config: Oxford spin-qubit device used in the
+# dynamic-disorder-potential project.
+#
+# Topology (from the SEM + wiring diagram):
+#   - Top:    sensor region (2 wedge-shaped barrier gates flanking 1 thin
+#             plunger finger that terminates at the sensor-dot well)
+#   - Middle: 1 long horizontal screening / separator gate
+#   - Bottom: row of 7 qubit-array gates (alternating plunger / barrier)
+# 12 gates total in the active area.
+#
+# Material parameters are inherited from `graph_ge_holes.yaml` (Ge/SiGe
+# hole device with physically-consistent band-structure prefactors,
+# degeneracy=2, m_eff=0.07).
+#
+# Device width: 1600 nm — estimated from the SEM's 400 nm scale bar
+# (the active gate region spans roughly 4x the scale bar). Refine when
+# you have the exact physical dimensions of the gate-design layout.
+#
+# NOT the default config — IST_10721_S14 (graph.yaml) remains the
+# default. To use this device, point `graph_config_path` at this file in
+# your pipeline yaml or PipelineConfig.
+#
+# Gate-index assignments are NOT yet calibrated for this device. The
+# pixel-color -> gate-index mapping is determined by skimage.io.imread
+# ordering at GraphConfig instantiation time; once dots form, run a
+# calibration scan analogous to `get_dot_forming_voltages_for_*` to find
+# the few-electron operating point and identify which index is sensor,
+# which are plungers, etc.
+
+name: oxford_dd_device
+
+device_config:
+  gate_config:
+    gate_design_dir: "data/gate_designs"
+    gate_design_file: "Oxford_Device_Disorder_Colored.png"
+  material_config:
+    carrier_charge: 1                # holes
+    degeneracy: 2                    # spin-only (no valleys at Gamma)
+    exp_charge_fudge_factor: 3
+    donors: 0
+    effective_mass: 0.07             # in-plane HH mass in strained Ge
+    mean_disorder: 0.0
+    relative_permittivity: 14.85
+    surface_potential: -310.0
+    scale_factor: 1
+  carrier_depth: 40.0
+  donor_density: 6.2e+16
+  donor_height: 20.0
+  drain:
+  - 0.05
+  - 0.95
+  material: SiGe
+  source:
+  - 0.05
+  - 0.05
+  width: 1600                        # TODO: confirm from device specs
+
+node_configs:
+- node_class: InitialElectroStaticPotential
+  name: initial_electrostatic_potential
+  connections:
+    input_data_names:
+    - gate_voltages
+    output_data_names:
+    - electrostatic_potential
+
+- node_class: IterativeSelfConsistentPotentialNode
+  name: iterative_self_consistent_potential
+  connections:
+    input_data_names:
+    - electrostatic_potential
+    output_data_names:
+    - self_consistent_potential_iterative
+
+- node_class: LoGQuantumDotDetectionNode
+  name: LoG_dot_counter
+  connections:
+    input_data_names:
+      - self_consistent_potential_iterative
+    output_data_names:
+      - dots
+
+- node_class: DotOccupationCapacitanceNode
+  name: capacitive_dot_occupation_node
+  connections:
+    input_data_names:
+      - self_consistent_potential_iterative
+      - dots
+    output_data_names:
+      - dots_with_occupation
+      - energy_matrix
+
+- node_class: SemiClassicalTransportNode
+  name: semiclassical_transport
+  connections:
+    input_data_names:
+      - self_consistent_potential_iterative
+    output_data_names:
+      - trajectory
+      - current
+
+- node_class: DoubleDotTunnelCouplingNode
+  connections:
+    input_data_names:
+      - self_consistent_potential_iterative
+      - dots
+    output_data_names:
+      - tunnel_coupling
+
+- node_class: CarrierDensityNode
+  name: carrier_density_iterative_node
+  connections:
+    input_data_names:
+      - self_consistent_potential_iterative
+    output_data_names:
+      - carrier_density_iterative
