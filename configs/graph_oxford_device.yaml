@@ -12,9 +12,7 @@
 # hole device with physically-consistent band-structure prefactors,
 # degeneracy=2, m_eff=0.07).
 #
-# Device width: 1600 nm — estimated from the SEM's 400 nm scale bar
-# (the active gate region spans roughly 4x the scale bar). Refine when
-# you have the exact physical dimensions of the gate-design layout.
+# Device width: 1000 nm (per user-supplied device specs).
 #
 # NOT the default config — IST_10721_S14 (graph.yaml) remains the
 # default. To use this device, point `graph_config_path` at this file in
@@ -53,7 +51,7 @@ device_config:
   source:
   - 0.05
   - 0.05
-  width: 1600                        # TODO: confirm from device specs
+  width: 1000
 
 node_configs:
 - node_class: InitialElectroStaticPotential
