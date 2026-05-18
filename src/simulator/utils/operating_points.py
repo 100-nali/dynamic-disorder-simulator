@@ -77,28 +77,31 @@ def get_dot_forming_voltages_for_ge_holes_double_dot() -> np.ndarray:
 def get_dot_forming_voltages_for_oxford_double_dot() -> np.ndarray:
     """
     Few-electron, balanced double-dot operating point on the Oxford device
-    (`configs/graph_oxford_device.yaml`).
+    (`configs/graph_oxford_device.yaml`) with **sensor tuned into the
+    Coulomb-blockade regime** (sensor occupation 3 e, not 42 e as in the
+    initial calibration).
 
-    Resulting dot inventory at these voltages:
+    Resulting dot inventory:
+      - 1 sensor dot   (occupation 3, clean charge-blockade regime; ideal
+                        for sensing nearby qubit transitions)
+      - 2 qubit dots   (occupation 1 each, balanced — formed under
+                        qubit plungers 6 and 7 between barriers 8 and 4)
 
-      - 1 sensor dot   (occupation ~42 — heavily populated; sensor tune is
-                        a separate follow-up if you want it depleted)
-      - 2 qubit dots   (occupation 1 each, balanced — formed under qubit
-                        plungers 5 and 7 between barriers 8 and 4)
+    Calibration steps:
+      1. Baseline = uniform 1250 mV (the lowest uniform voltage at which
+         the qubit array can host any dots).
+      2. Lower qubit plungers v6=1050, v7=1150 to form (1, 1) qubit dots.
+      3. Raise sensor plunger v10=2800 to deplete the sensor dot.
+      4. Raise sensor barriers v2=v9=1500 to tighten the sensor well.
+      5. Since steps 3-4 partially deplete the qubit region too, bump
+         qubit plungers down: v6=800, v7=900 (vs the unsensored config's
+         1050, 1150) to recover (1, 1).
 
-    Calibrated by:
-      1. Finding that uniform 1250 mV across all 11 gates puts the device
-         in a regime where one qubit dot can form (lower than IST's
-         operating point because the Oxford qubit array is more depleted
-         at higher uniform V).
-      2. Selectively lowering qubit plungers {6, 7} below baseline to pull
-         holes into their wells, producing two adjacent dots.
-      3. Tuning v6=1050, v7=1150 so both dots come out at single-electron
-         (1, 1) without one of them disappearing.
-
-    Plunger 5 (bottom) is held at the 1250 baseline (effectively no extra
-    bias), so the third qubit plunger doesn't host a dot. This is the
-    standard charge-sensed double-dot operating mode.
+    Net change from no-sensor-tune version:
+      v10: 1250 -> 2800   (sensor plunger up)
+      v2, v9: 1250 -> 1500 (sensor barriers up)
+      v6: 1050 -> 800     (compensate qubit dot 1)
+      v7: 1150 -> 900     (compensate qubit dot 2)
 
     Returns
     -------
@@ -107,13 +110,13 @@ def get_dot_forming_voltages_for_oxford_double_dot() -> np.ndarray:
     return np.array([
         1250.0,   # 0  separator (central screening bar)
         1250.0,   # 1  qubit barrier (outer bottom)
-        1250.0,   # 2  sensor barrier
+        1500.0,   # 2  sensor barrier (raised to tighten sensor well)
         1250.0,   # 3  qubit barrier (outer top)
         1250.0,   # 4  qubit barrier (between plungers 7 and 5)
         1250.0,   # 5  qubit plunger (bottom — no extra bias, doesn't host a dot)
-        1050.0,   # 6  qubit plunger (top of active pair — biased to form dot)
-        1150.0,   # 7  qubit plunger (central, smallest — biased to form dot)
+        800.0,    # 6  qubit plunger (top of active pair — compensated for sensor tune)
+        900.0,    # 7  qubit plunger (central — compensated for sensor tune)
         1250.0,   # 8  qubit barrier (between plungers 6 and 7)
-        1250.0,   # 9  sensor barrier
-        1250.0,   # 10 sensor plunger
+        1500.0,   # 9  sensor barrier (raised to tighten sensor well)
+        2800.0,   # 10 sensor plunger (depleting bias: sensor goes 42 -> 3 e)
     ])
