@@ -71,7 +71,7 @@ def integrate_2d(array: np.ndarray, scale: np.ndarray) -> float:
     x = np.linspace(0, scale[0] * nx, nx)
     y = np.linspace(0, scale[1] * ny, ny)
 
-    return np.trapz(np.trapz(array, x, axis=0), y)
+    return np.trapezoid(np.trapezoid(array, x, axis=0), y)
 
 
 def get_dot_mask(energy: np.ndarray, location: np.ndarray) -> np.ndarray:

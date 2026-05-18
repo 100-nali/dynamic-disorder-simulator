@@ -69,7 +69,14 @@ def plot_csd(
     data_or_path: Union[dict, str, Path],
     ax: Optional[plt.Axes] = None,
 ) -> plt.Axes:
-    """Plot the CSD over the (vp1, vp2) sweep."""
+    """
+    Plot the CSD over the (vp1, vp2) sweep.
+
+    CSD values are the minimax barrier height (mV) along the source->drain
+    transport path. Sign convention: negative = conducting (path below Fermi
+    level), positive = blocked. Plotted with a diverging colormap centered on
+    0 so the conducting/blocked boundary is the visual zero of the colorbar.
+    """
     data = _maybe_load(data_or_path)
     csd = data["csd"]["data"]
     vp1 = data["sweep"]["vp1"]
@@ -77,14 +84,17 @@ def plot_csd(
 
     if ax is None:
         _, ax = plt.subplots()
+    finite = csd[np.isfinite(csd)]
+    v = float(np.abs(finite).max()) if finite.size else 1.0
     im = ax.imshow(
         csd.T,
         origin="lower",
-        cmap="viridis",
+        cmap="RdBu_r",
+        vmin=-v, vmax=v,
         extent=[vp1.min(), vp1.max(), vp2.min(), vp2.max()],
         aspect="auto",
     )
-    plt.colorbar(im, ax=ax, label="transport")
+    plt.colorbar(im, ax=ax, label="barrier height (mV)  blue = conducting")
     ax.set_xlabel(f"VP{data['sweep']['plunger_indices'][0]} (mV)")
     ax.set_ylabel(f"VP{data['sweep']['plunger_indices'][1]} (mV)")
     ax.set_title(f"CSD (sample {data['sample_id']})")

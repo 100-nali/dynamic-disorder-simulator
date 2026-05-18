@@ -29,11 +29,32 @@ def _init_transport_worker(transport_node):
     _WORKER_TRANSPORT_NODE = transport_node
 
 
+def _csd_signal_from_transport(result) -> float:
+    """
+    Extract the per-frame CSD scalar from SemiClassicalTransportNode output.
+
+    The node returns `[path_map, minimax]`:
+      - path_map  : (nx, ny) binary mask of the lowest-energy source->drain path
+      - minimax   : scalar (mV), max potential energy along that path
+
+    The channel conducts when `minimax < 0` (the entire path lies below the
+    Fermi level); it's blocked when `minimax > 0`. Storing `minimax` directly
+    keeps the full signed signal — apply any thermal smoothing post-hoc, e.g.
+        I_proxy = 1.0 / np.cosh(minimax / kT_meV) ** 2     # cosh^2 peak
+        I_proxy = 1.0 / (1.0 + np.exp(minimax / kT_meV))   # Fermi step
+
+    (Earlier versions of this code returned `mean(path_map)` — the path-length
+    fraction. That is geometric, not transport, and was the cause of "flat
+    CSDs". This is the fix.)
+    """
+    return float(result[1])
+
+
 def _run_transport_one(sc_pot: np.ndarray) -> float:
     """Per-frame transport call. Module-level so it pickles cleanly."""
     try:
         result = _WORKER_TRANSPORT_NODE.compute(potential=sc_pot)
-        return float(np.mean(result[0]))
+        return _csd_signal_from_transport(result)
     except Exception:
         return float("nan")
 
@@ -115,13 +136,15 @@ def run_csd_sweep(
 
             try:
                 result = graph.run_component_outputs({"gate_voltages": voltages})
-                if "trajectory" in result and hasattr(result["trajectory"], "shape"):
-                    csd[i, j] = float(np.mean(result["trajectory"]))
+                # SemiClassicalTransportNode's second output (named "current" in
+                # the YAML, but it's actually the minimax barrier height in mV).
+                # See _csd_signal_from_transport for the convention.
+                if "current" in result and np.ndim(result["current"]) == 0:
+                    csd[i, j] = float(result["current"])
                 elif "minimax" in result and np.ndim(result["minimax"]) == 0:
                     csd[i, j] = float(result["minimax"])
                 else:
-                    occ = result.get("dots_with_occupation", [0])
-                    csd[i, j] = float(np.sum(occ)) if len(occ) else 0.0
+                    csd[i, j] = np.nan
             except Exception:
                 csd[i, j] = np.nan
 
