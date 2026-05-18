@@ -81,13 +81,20 @@ class ComputationalGraph:
         The name of the attribute is "_" + component.output_data_node, and the method used
         to compute it is the component call. The arguments of the call are either provided
         by the user, or computed by an upstream component.
+
+        Note: we bind `component_idx` (not the component object) so that later mutations
+        of `self.components[i] = new_node` are respected at call time. The qxcl original
+        bound the component reference itself, which silently dropped any
+        `graph.components[0] = ExternalDisorderNode(...)`-style substitutions
+        (e.g. in `build_graph_with_disorder`). The disorder field would never reach
+        the SC solver — every "disorder-injected" sample looked identical.
         """
-        for component in self.components:
+        for component_idx, component in enumerate(self.components):
             for idx, suboutput in enumerate(component.output_data_names):
                 setattr(
                     self,
                     "_" + suboutput,
-                    partial(self._value_getter, component=component, idx=idx),
+                    partial(self._value_getter, component_idx=component_idx, idx=idx),
                 )
                 self.data_dependencies[suboutput] = component.input_data_names.copy()
 
@@ -110,7 +117,7 @@ class ComputationalGraph:
     def _value_getter(
         self,
         set_value_dict: Dict[str, np.ndarray],
-        component: AbstractGraphNode,
+        component_idx: int,
         idx: int = 0,
     ) -> np.ndarray:
         """
@@ -120,12 +127,15 @@ class ComputationalGraph:
 
         Args:
             set_value_dict: Dictionary supplying possible inputs to the component
-            component: a component of the graph
+            component_idx: index into self.components — looked up at call time so
+                that runtime substitutions (e.g. ExternalDisorderNode) are
+                respected.
             idx: index of the value required within the list of outputs
 
         Returns:
             the output data node of the component
         """
+        component = self.components[component_idx]
         input_values = {}
 
         target_variable = component.output_data_names[idx]
