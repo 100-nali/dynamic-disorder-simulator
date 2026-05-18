@@ -1,0 +1,116 @@
+# Alternative graph config: IST_10721_S14 device with physically consistent
+# Ge/SiGe hole-band parameters.
+#
+# Identical to `graph.yaml` EXCEPT for the two band-structure prefactors:
+#   degeneracy      : 4  ->  2    (holes: spin-only, no valleys at Gamma)
+#   effective_mass  : 0.28 -> 0.07 (in-plane heavy-hole mass in strained Ge)
+#
+# Rationale: the original `graph.yaml` config (inherited verbatim from qxcl's
+# real_device_physics_based_graph.yaml) is internally inconsistent. It uses
+# carrier_charge=+1 (holes) and relative_permittivity=14.85 (Ge-rich SiGe
+# alloy) — which both correctly identify this as a Ge/SiGe hole device —
+# but its `degeneracy=4` and `effective_mass=0.28` are taken from a
+# strained-Si electron template (2 valleys x 2 spins, m_t ~ 0.19) that was
+# never updated.
+#
+# The 2D carrier-density formula in self_consistent_potential_utils.py uses
+# the product `degeneracy * effective_mass` as the density-of-states scale:
+#     n = degeneracy * (m / (pi * hbar^2)) * (mu - energy) * dist
+#
+#   Original config:  g * m_eff = 4 * 0.28 = 1.12  (Si-electron-like)
+#   Corrected here:   g * m_eff = 2 * 0.07 = 0.14  (Ge-hole-like, ~8x smaller)
+#
+# Consequence: with the original config, the same gate voltages put ~8x more
+# carriers into the device than a real Ge/SiGe hole-qubit would have. Dots
+# come out over-filled (~20-30 electrons rather than single-electron), and
+# unrealistically large positive bias is needed to deplete the sensor.
+# This config should produce ~few-electron dots at the standard
+# `get_dot_forming_voltages_for_*` voltages.
+
+name: realistic_device_graph_ge_holes
+
+device_config:
+  gate_config:
+    gate_design_dir: "data/gate_designs"
+    gate_design_file: "IST_10721_S14.png"
+  material_config:
+    carrier_charge: 1
+    degeneracy: 2                    # CHANGED from 4
+    exp_charge_fudge_factor: 3
+    donors: 0
+    effective_mass: 0.07             # CHANGED from 0.28
+    mean_disorder: 0.0
+    relative_permittivity: 14.85
+    surface_potential: -310.0
+    scale_factor: 1
+  carrier_depth: 40.0
+  donor_density: 6.2e+16
+  donor_height: 20.0
+  drain:
+  - 0.05
+  - 0.95
+  material: SiGe
+  source:
+  - 0.05
+  - 0.05
+  width: 880
+
+node_configs:
+- node_class: InitialElectroStaticPotential
+  name: initial_electrostatic_potential
+  connections:
+    input_data_names:
+    - gate_voltages
+    output_data_names:
+    - electrostatic_potential
+
+- node_class: IterativeSelfConsistentPotentialNode
+  name: iterative_self_consistent_potential
+  connections:
+    input_data_names:
+    - electrostatic_potential
+    output_data_names:
+    - self_consistent_potential_iterative
+
+- node_class: LoGQuantumDotDetectionNode
+  name: LoG_dot_counter
+  connections:
+    input_data_names:
+      - self_consistent_potential_iterative
+    output_data_names:
+      - dots
+
+- node_class: DotOccupationCapacitanceNode
+  name: capacitive_dot_occupation_node
+  connections:
+    input_data_names:
+      - self_consistent_potential_iterative
+      - dots
+    output_data_names:
+      - dots_with_occupation
+      - energy_matrix
+
+- node_class: SemiClassicalTransportNode
+  name: semiclassical_transport
+  connections:
+    input_data_names:
+      - self_consistent_potential_iterative
+    output_data_names:
+      - trajectory
+      - current
+
+- node_class: DoubleDotTunnelCouplingNode
+  connections:
+    input_data_names:
+      - self_consistent_potential_iterative
+      - dots
+    output_data_names:
+      - tunnel_coupling
+
+- node_class: CarrierDensityNode
+  name: carrier_density_iterative_node
+  connections:
+    input_data_names:
+      - self_consistent_potential_iterative
+    output_data_names:
+      - carrier_density_iterative
