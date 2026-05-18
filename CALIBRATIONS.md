@@ -112,6 +112,33 @@ v:    1250 1250 1500 1250 1250 1250 800  900  1250 1500  2800
 
 ---
 
+## Canonical disorder source for data generation
+
+For training the distribution transformer (and the DL SC node when we build
+it), the **default disorder source** is:
+
+```python
+from simulator import GaussianRandomFieldSource
+
+source = GaussianRandomFieldSource(
+    grid_shape=(330, 500),           # Oxford device grid (or 346x346 for IST)
+    physical_width_nm=1000.0,        # Oxford (880 for IST)
+    amplitude_mV=5.0,
+    correlation_length_nm=100.0,     # 10% of device width — features ~plunger-size
+    kernel="rbf",                    # smooth squared-exponential
+)
+```
+
+Rationale for ℓ = 100 nm:
+- Larger than a single qubit dot (~30 nm) — disorder shifts the *potential
+  landscape* rather than the *fine structure* of an individual dot.
+- Smaller than the inter-dot spacing (~150–200 nm) — disorder still couples
+  the two qubit dots differently (which is what the DT learns to invert).
+- Larger than the GMRF generator's smallest meaningful scale (~2× pixel size,
+  i.e. ~6 nm) — well-resolved by the simulator's spatial grid.
+
+---
+
 ## Adding a new device
 
 To add a calibration helper for another device:
