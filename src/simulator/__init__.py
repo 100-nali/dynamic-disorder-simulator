@@ -9,6 +9,7 @@ Top-level shortcuts; everything else lives in `simulator.pipeline`,
 from simulator.injection.external_disorder_node import ExternalDisorderNode
 from simulator.pipeline import (
     DisorderSource,
+    GaussianRandomFieldSource,
     PipelineConfig,
     SimulatorDataset,
     TLFDisorderSource,
@@ -20,6 +21,7 @@ from simulator.pipeline import (
 __all__ = [
     "DisorderSource",
     "ExternalDisorderNode",
+    "GaussianRandomFieldSource",
     "PipelineConfig",
     "SimulatorDataset",
     "TLFDisorderSource",

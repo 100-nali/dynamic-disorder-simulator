@@ -6,6 +6,7 @@ from simulator.pipeline.config import (
 )
 from simulator.pipeline.dataset import SimulatorDataset
 from simulator.pipeline.disorder_sources.base import DisorderSource
+from simulator.pipeline.disorder_sources.random_field import GaussianRandomFieldSource
 from simulator.pipeline.disorder_sources.tlf import TLFDisorderSource
 from simulator.pipeline.generate import generate_sample
 from simulator.pipeline.inducing_points import make_inducing_coords, sample_field_at
@@ -19,6 +20,7 @@ from simulator.pipeline.storage import (
 
 __all__ = [
     "DisorderSource",
+    "GaussianRandomFieldSource",
     "InducingPointsConfig",
     "PipelineConfig",
     "SimulatorDataset",
