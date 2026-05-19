@@ -51,12 +51,21 @@ device_config:
                         # against the paper, see CALIBRATIONS.md.)
   donor_density: 6.2e+16
   donor_height: 20.0
+  # Source/drain placed in the qubit-array x-row (x_norm ~ 0.65, the qubit
+  # dots sit at x_pix ~ 203-205 on the 330-px x-axis) on opposite y-edges so
+  # the transport path runs in series through both (1, 1) dots (which sit at
+  # y_pix ~ 191 and ~ 233 on the 500-px y-axis). The original placement
+  # (both at x_norm = 0.05, top of image) routed transport across the SENSOR
+  # region instead of the qubit array, so the CSD was insensitive to qubit
+  # transitions. The Jirovec device's actual lead geometry is implicit in
+  # the gate-design PNG; this is the simulator's analog of putting ohmics
+  # on either side of the qubit row.
   drain:
-  - 0.05
+  - 0.65
   - 0.95
   material: SiGe
   source:
-  - 0.05
+  - 0.65
   - 0.05
   width: 1000
 
