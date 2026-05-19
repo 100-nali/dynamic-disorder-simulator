@@ -32,7 +32,8 @@ def test_oxford_double_dot_shape_and_dtype() -> None:
     v = get_dot_forming_voltages_for_oxford_double_dot()
     assert v.shape == (11,), f"expected 11 gates, got {v.shape}"
     assert v.dtype == np.float64
-    assert (v >= 0).all() and (v <= 3000).all()
+    # Upper bound 3500 mV accommodates the d=47 sensor plunger v[10]=3100.
+    assert (v >= 0).all() and (v <= 3500).all()
 
 
 def test_oxford_double_dot_specific_calibration() -> None:
