@@ -96,7 +96,12 @@ def get_path(
 
     # Guiding potential biases the path toward the drain (only applied where
     # energy < 0, i.e. inside conducting regions).
-    x, y = np.meshgrid(np.linspace(0, 1, vert), np.linspace(0, 1, hor))
+    # NB: indexing='ij' is required to match energy.shape = (vert, hor). With
+    # default 'xy' indexing meshgrid returns (hor, vert) outputs, which then
+    # fails to broadcast against `fluctuations`/`energy` on non-square grids
+    # (the bug was invisible on the IST 346x346 square grid; bites on the
+    # Oxford 330x500 device).
+    x, y = np.meshgrid(np.linspace(0, 1, vert), np.linspace(0, 1, hor), indexing='ij')
     drain_x, drain_y = drain[0] / vert, drain[1] / hor
     r_drain = np.sqrt((x - drain_x) ** 2 + (y - drain_y) ** 2) + 0.5 / np.mean(vert / hor)
     guiding_potential = -energy_scale / r_drain
