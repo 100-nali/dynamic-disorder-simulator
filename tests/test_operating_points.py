@@ -36,12 +36,25 @@ def test_oxford_double_dot_shape_and_dtype() -> None:
 
 
 def test_oxford_double_dot_specific_calibration() -> None:
-    """The plunger bias values are what define the (1,1) operating point."""
+    """
+    The voltage values that define the (1, 1) sensor-blockaded operating point
+    at the calibrated carrier_depth=47 nm (Jirovec-consistent z-stack).
+    """
     v = get_dot_forming_voltages_for_oxford_double_dot()
-    # Baseline 1250 mV (chosen because uniform 1250 first allows qubit dots to form)
-    assert v[0] == 1250.0   # separator
-    assert v[1] == 1250.0   # outer barrier
-    assert v[5] == 1250.0   # plunger held at baseline (no third dot)
-    # The two active plungers biased below baseline to host dots
-    assert v[6] == 1050.0
-    assert v[7] == 1150.0
+    # Baseline 1100 mV (the d=47 baseline that allows qubit dots to form).
+    assert v[0] == 1100.0   # separator
+    assert v[1] == 1100.0   # outer barrier
+    assert v[3] == 1100.0   # outer barrier
+    # Qubit-array barriers raised to confine two separate (1, 1) wells.
+    assert v[4] == 1300.0
+    assert v[8] == 1300.0
+    # Bottom plunger raised (becomes active at the lower baseline; would
+    # otherwise host a spurious 3 e dot at y=191).
+    assert v[5] == 1300.0
+    # Two active qubit plungers — host the two (1, 1) dots.
+    assert v[6] == 900.0
+    assert v[7] == 700.0
+    # Sensor barriers + plunger: 2 e in deep blockade.
+    assert v[2] == 1350.0
+    assert v[9] == 1350.0
+    assert v[10] == 3100.0

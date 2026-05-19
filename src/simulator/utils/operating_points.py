@@ -29,7 +29,15 @@ source PNG) was merged into a single gate at index 0.
   2, 9    sensor barriers
   10      sensor plunger
   3, 8, 4, 1   qubit barriers (3 = outer top, 1 = outer bottom)
-  6, 7, 5      qubit plungers  (6 = top, 7 = central+smallest, 5 = bottom)
+  6, 7, 5      qubit plungers
+
+The two qubit dots in the (1, 1) operating point sit at COM y=191 and y=233
+(in pixel coords on the 330x500 grid). At carrier_depth=47 these are hosted
+by v[5] (y=191 dot, the BOTTOM plunger in the canonical naming) and v[7]
+(y=233 dot, the CENTRAL plunger); v[6] tunes their relative depth. At
+carrier_depth=40 the dot-to-gate mapping was different (v[6] and v[7]
+hosted the two dots and v[5] was inert at baseline) — the weaker gate
+coupling at larger d shifts which plunger geometry dominates each well.
 """
 
 from __future__ import annotations
@@ -78,45 +86,51 @@ def get_dot_forming_voltages_for_oxford_double_dot() -> np.ndarray:
     """
     Few-electron, balanced double-dot operating point on the Oxford device
     (`configs/graph_oxford_device.yaml`) with **sensor tuned into the
-    Coulomb-blockade regime** (sensor occupation 3 e, not 42 e as in the
-    initial calibration).
+    Coulomb-blockade regime**.
+
+    This calibration is for `carrier_depth = 47 nm` (the value that matches
+    the Jirovec et al. 2011.13755 Ge/SiGe z-stack; see CALIBRATIONS.md). The
+    previous calibration for `carrier_depth = 40 nm` produced a different
+    voltage vector — see git history if you ever revert the config.
 
     Resulting dot inventory:
-      - 1 sensor dot   (occupation 3, clean charge-blockade regime; ideal
-                        for sensing nearby qubit transitions)
-      - 2 qubit dots   (occupation 1 each, balanced — formed under
-                        qubit plungers 6 and 7 between barriers 8 and 4)
+      - 1 sensor dot   (occupation 2, deep Coulomb blockade)
+      - 2 qubit dots   (occupation 1 each, balanced)
 
-    Calibration steps:
-      1. Baseline = uniform 1250 mV (the lowest uniform voltage at which
-         the qubit array can host any dots).
-      2. Lower qubit plungers v6=1050, v7=1150 to form (1, 1) qubit dots.
-      3. Raise sensor plunger v10=2800 to deplete the sensor dot.
-      4. Raise sensor barriers v2=v9=1500 to tighten the sensor well.
-      5. Since steps 3-4 partially deplete the qubit region too, bump
-         qubit plungers down: v6=800, v7=900 (vs the unsensored config's
-         1050, 1150) to recover (1, 1).
+    Calibration journey at d=47 (full notes in CALIBRATIONS.md):
+      1. The d=40 voltages give NOTHING at d=47 (weaker gate coupling +
+         non-uniform per-gate scaling — pure beta * V_old does not work).
+      2. Uniform-baseline scan: the qubit-array baseline that supports
+         dots dropped from 1250 (d=40) to 1100 (d=47).
+      3. At base=1100, qubit-array barriers v[4]=v[8] need to be raised
+         from 1250 to 1300 to confine two separate wells (otherwise the
+         qubit region forms a single ~20 e puddle).
+      4. Sensor depletion: v[10] needs to be 3100 (vs 2800 at d=40); v[2]
+         and v[9] tightened to 1350 (vs 1500 at d=40 — slightly looser).
+      5. Bottom plunger v[5] becomes active at the lower baseline and
+         hosts a spurious 3 e dot at y=191. Raise v[5] to 1300 to deplete
+         it (at d=40 with base=1250 v[5] was inert at 1250).
+      6. Final dot tuning: v[6]=900, v[7]=700 to land (1, 1). Three (1,1)
+         configs exist in a stable plateau; this one sits at the center.
 
-    Net change from no-sensor-tune version:
-      v10: 1250 -> 2800   (sensor plunger up)
-      v2, v9: 1250 -> 1500 (sensor barriers up)
-      v6: 1050 -> 800     (compensate qubit dot 1)
-      v7: 1150 -> 900     (compensate qubit dot 2)
+    Final voltage vector (mV):
+      gate:  0    1    2    3    4    5    6    7    8    9    10
+      v:   1100 1100 1350 1100 1300 1300 900  700  1300 1350 3100
 
     Returns
     -------
     np.ndarray of shape (11,) in mV.
     """
     return np.array([
-        1250.0,   # 0  separator (central screening bar)
-        1250.0,   # 1  qubit barrier (outer bottom)
-        1500.0,   # 2  sensor barrier (raised to tighten sensor well)
-        1250.0,   # 3  qubit barrier (outer top)
-        1250.0,   # 4  qubit barrier (between plungers 7 and 5)
-        1250.0,   # 5  qubit plunger (bottom — no extra bias, doesn't host a dot)
-        800.0,    # 6  qubit plunger (top of active pair — compensated for sensor tune)
-        900.0,    # 7  qubit plunger (central — compensated for sensor tune)
-        1250.0,   # 8  qubit barrier (between plungers 6 and 7)
-        1500.0,   # 9  sensor barrier (raised to tighten sensor well)
-        2800.0,   # 10 sensor plunger (depleting bias: sensor goes 42 -> 3 e)
+        1100.0,   # 0  separator (central screening bar) - baseline
+        1100.0,   # 1  qubit barrier (outer bottom) - baseline
+        1350.0,   # 2  sensor barrier (raised to tighten sensor well)
+        1100.0,   # 3  qubit barrier (outer top) - baseline
+        1300.0,   # 4  qubit barrier (between plungers 7 and 5) - raised
+        1300.0,   # 5  bottom plunger (raised to deplete spurious dot)
+        900.0,    # 6  qubit plunger (top of active pair)
+        700.0,    # 7  qubit plunger (central)
+        1300.0,   # 8  qubit barrier (between plungers 6 and 7) - raised
+        1350.0,   # 9  sensor barrier (raised to tighten sensor well)
+        3100.0,   # 10 sensor plunger (depletes sensor to 2 e)
     ])

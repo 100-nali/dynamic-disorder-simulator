@@ -41,7 +41,14 @@ device_config:
     relative_permittivity: 14.85
     surface_potential: -310.0
     scale_factor: 1
-  carrier_depth: 40.0
+  carrier_depth: 47.0   # matches Jirovec et al. 2011.13755 z-stack:
+                        # 20 nm Al2O3 + 2 nm Si cap + 20 nm Si0.3Ge0.7 top
+                        # barrier + 10 nm to Ge QW center = 52 nm; minus the
+                        # hardcoded +5 nm wavefunction-peak offset in
+                        # self_consistent_potential_utils.coulomb() gives the
+                        # effective d ~= 52 nm in the Davies (1995) Laplace
+                        # kernel. (Was 40 nm; bumped after auditing the z-stack
+                        # against the paper, see CALIBRATIONS.md.)
   donor_density: 6.2e+16
   donor_height: 20.0
   drain:
